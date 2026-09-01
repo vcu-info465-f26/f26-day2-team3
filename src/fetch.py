@@ -1,3 +1,6 @@
+# This file is the first stage of the pipeline and pulls raw records from the API.
+# fetch_data() returns a list of dictionaries containing the records returned by the API without modifying them.
+# The retry logic gives the request another chance when the API temporarily fails so that one failed request does not stop the entire program.
 """Getting the data. One job: go to the API and come back with a table.
 
 This file knows about Open-Meteo. Nothing else in the project does, which
