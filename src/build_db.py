@@ -1,3 +1,6 @@
+# This file stores forecast records in the pipeline's SQLite database.
+# save_to_db() hands back None after writing the records to the database.
+# The INSERT OR REPLACE statement means running the storage step again updates existing days instead of creating duplicate rows.
 """Storing the data. One job: put the table somewhere it will stay.
 
 A SQLite database is a single file. There is no server to start, no
