@@ -1,3 +1,10 @@
+# This file is used for finding finding the max temperatures
+# for each day in the forcast table from the weather.db database in the /output/ directory. 
+# The main function get_max() connects to the SQLite database, runs a SQL query to find 
+# the maximum high temperatures for each day in the forecast table, and returns the result as a pandas DataFrame.
+# The one thing about this script is that it does not have any retry logic 
+# in case the database query fails or the conection to the database is lost.
+
 import sqlite3
 from pathlib import Path
 
