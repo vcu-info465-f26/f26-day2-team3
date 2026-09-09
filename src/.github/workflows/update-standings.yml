@@ -1,0 +1,60 @@
+name: Update NCAAF standings
+
+on:
+  schedule:
+    - cron: "0 23 * * 4"
+    - cron: "0 0 * * 5"
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season to fetch"
+        required: true
+        default: "2026"
+
+permissions:
+  contents: write
+
+jobs:
+  update-standings:
+    runs-on: ubuntu-latest
+    env:
+      SEASON: ${{ github.event.inputs.season || '2026' }}
+      BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Check Pacific schedule time
+        id: schedule
+        run: |
+          if [[ "$(TZ=America/Los_Angeles date '+%u %H:%M')" == "4 16:00" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch standings
+        run: python src/fetch.py --season "$SEASON"
+        if: steps.schedule.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
+
+      - name: Commit updated databases
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/bdl.db
+          if git diff --cached --quiet; then
+            echo "No database changes to commit."
+            exit 0
+          fi
+          git commit -m "Update NCAAF standings for $SEASON"
+          git push
