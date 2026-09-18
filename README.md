@@ -13,3 +13,6 @@ This project is an automated data pipeline and interactive Streamlit dashboard t
 * **AI Summarization:** `src/summarize.py` reads the fresh data and generates `data/summary.md` via the LLM API.
 * **Database Build:** Upon deployment/startup, `src/app.py` triggers `src/build_db.py` to parse the latest JSON snapshot into `project.db`.
 * **Frontend Rendering:** Streamlit queries the database using `src/analyze.py`, displays the tables, charts, and daily summary, and hosts the live conversational AI agent.
+
+
+We are joining the tables conference, team, players, and standings by the conference_id.
