@@ -1,6 +1,5 @@
-# Runs on a GitHub Actions schedule.
-# Fetches live NCAAF data from the balldontlie endpoints (conferences, teams, standings)
-# Writes output to a dated snapshot (e.g., data/2026-09-10.json).import os
+from datetime import datetime, timezone
+import json
 import os
 import sqlite3
 from pathlib import Path
@@ -10,8 +9,16 @@ from dotenv import load_dotenv
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT_DIR / "data"
 DB_PATH = ROOT_DIR / "data" / "bdl.db"
 load_dotenv(ROOT_DIR / ".env")
+
+
+def save_snapshot(payload):
+    DATA_DIR.mkdir(exist_ok=True)
+    snapshot_path = DATA_DIR / f"{datetime.now(timezone.utc):%Y-%m-%d}.json"
+    snapshot_path.write_text(json.dumps(payload, indent=2) + "\n")
+    return snapshot_path
 
 
 def get_conferences():
@@ -25,7 +32,10 @@ def get_conferences():
         timeout=30,
     )
     response.raise_for_status()
-    return response.json()["data"]
+    payload = response.json()
+    snapshot_path = save_snapshot(payload)
+    print(f"Saved API snapshot to {snapshot_path}")
+    return payload["data"]
 
 
 def save_conferences(conferences):
