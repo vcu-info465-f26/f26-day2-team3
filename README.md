@@ -16,3 +16,7 @@ This project is an automated data pipeline and interactive Streamlit dashboard t
 
 
 We are joining the tables conference, team, players, and standings by the conference_id.
+
+<p align="center">
+  <img src="schema.png" alt="NCAAF dashboard" width="800">
+</p>sudo
