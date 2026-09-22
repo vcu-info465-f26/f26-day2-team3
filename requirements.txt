@@ -7,3 +7,4 @@
 requests>=2.32,<3
 pandas>=3.0,<4
 matplotlib>=3.9,<4
+dotenv>=1.0,<2
