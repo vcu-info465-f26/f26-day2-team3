@@ -204,10 +204,9 @@ def _load_snapshots(connection: sqlite3.Connection) -> None:
                 )
                 continue
 
-            if (
-                {"id", "name", "full_name", "abbreviation"}.issubset(record)
-                and _conference_id(record) == 1
-            ):
+            if {"id", "name", "full_name", "abbreviation"}.issubset(record):
+                if _conference_id(record) != 1:
+                    continue
                 connection.execute(
                     """
                     INSERT INTO teams
