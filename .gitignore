@@ -1,5 +1,4 @@
 *.db
 data/*.db
-data/*.json
 .env
 src/__pycache__/
