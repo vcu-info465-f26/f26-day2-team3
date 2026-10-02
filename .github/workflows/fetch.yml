@@ -46,6 +46,7 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$(TZ=America/Los_Angeles date '+%H:%M')" == "00:00" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
             echo "date=$run_date" >> "$GITHUB_OUTPUT"
+            echo "branch=fetch/${run_date}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
@@ -63,7 +64,7 @@ jobs:
 
       - name: Create snapshot branch from main
         if: steps.schedule.outputs.run == 'true' && steps.existing.outputs.skip == 'false'
-        run: git checkout -b "fetch/${{ steps.schedule.outputs.date }}"
+        run: git checkout -b "${{ steps.schedule.outputs.branch }}"
 
       - name: Fetch standings
         if: steps.schedule.outputs.run == 'true' && steps.existing.outputs.skip == 'false'
@@ -90,14 +91,14 @@ jobs:
 
       - name: Push snapshot branch
         if: steps.commit.outputs.changed == 'true'
-        run: git push -u origin "fetch/${{ steps.schedule.outputs.date }}"
+        run: git push -u origin "${{ steps.schedule.outputs.branch }}"
 
       - name: Open pull request for review
         if: steps.commit.outputs.changed == 'true'
         run: |
           gh pr create \
             --base main \
-            --head "fetch/${{ steps.schedule.outputs.date }}" \
+            --head "${{ steps.schedule.outputs.branch }}" \
             --title "Add NCAAF snapshot for ${{ steps.schedule.outputs.date }}" \
             --body "Automated snapshot fetch for ${{ steps.schedule.outputs.date }}." \
             --reviewer "$PR_REVIEWER"
