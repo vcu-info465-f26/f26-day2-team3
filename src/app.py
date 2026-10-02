@@ -1,59 +1,41 @@
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter
 import pandas as pd
-import streamlit as st
-
-import analyze
-import build_db
 
 
-@st.cache_resource
-def initialize_database() -> None:
-	build_db.main()
+def top_10_acc_chart(history: pd.DataFrame) -> None:
+	history = history.copy()
+	history["snapshot_date"] = pd.to_datetime(history["snapshot_date"])
+	latest_date = history["snapshot_date"].max()
+	latest_standings = history[history["snapshot_date"] == latest_date].copy()
+	latest_standings = latest_standings.dropna(subset=["wins", "losses"])
+	latest_standings = latest_standings.sort_values(
+		["win_percentage", "wins", "losses"],
+		ascending=[False, False, True],
+	).head(10)
+
+	if latest_standings.empty:
+		return
+
+	figure, axis = plt.subplots(figsize=(12, 6))
+	positions = list(range(len(latest_standings)))
+	axis.bar(positions, latest_standings["wins"], color="#167d75", label="Wins")
+	axis.bar(positions, latest_standings["losses"], color="#d9e4e3", label="Losses")
+	axis.set_xticks(positions)
+	axis.set_xticklabels(latest_standings["team"], rotation=45, ha="right")
+	axis.set_title(f"Top 10 ACC teams on {latest_date.strftime('%b %d, %Y')}")
+	axis.set_xlabel("Team")
+	axis.set_ylabel("Record")
+	axis.legend()
+
+	for index, (wins, losses) in enumerate(zip(latest_standings["wins"], latest_standings["losses"])):
+		label = f"{wins}-{losses}"
+		axis.text(index, max(wins, losses) + 0.5, label, ha="center", va="bottom", fontsize=8)
+
+	axis.set_ylim(0, max(latest_standings["wins"].max(), latest_standings["losses"].max()) * 1.5)
+	plt.tight_layout()
+	plt.show()
 
 
-st.set_page_config(page_title="ACC Standings Trends", layout="wide")
-initialize_database()
-
-st.title("ACC Standings Trends")
-st.subheader("Win percentage over time")
-
-history = analyze.get_standings_history()
-if history.empty:
-	st.info("No dated standings snapshots are available yet.")
-else:
-	team_options = sorted(history["team"].dropna().unique())
-	selected_team = st.selectbox("Team", team_options)
-	team_history = history[history["team"] == selected_team].copy()
-	team_history["snapshot_date"] = pd.to_datetime(team_history["snapshot_date"])
-	team_history = team_history.sort_values("snapshot_date")
-	team_history = team_history.dropna(subset=["win_percentage"])
-
-	if team_history.empty:
-		st.info("No win-percentage data is available for this team.")
-	else:
-		figure, axis = plt.subplots(figsize=(10, 4.5))
-		axis.plot(
-			team_history["snapshot_date"],
-			team_history["win_percentage"],
-			marker="o",
-			linewidth=2,
-			color="#167d75",
-		)
-		axis.set_title(f"{selected_team} win percentage")
-		axis.set_xlabel("Snapshot date")
-		axis.set_ylabel("Win percentage")
-		axis.set_ylim(0, 1)
-		axis.yaxis.set_major_formatter(PercentFormatter(1))
-		axis.xaxis.set_major_formatter(mdates.DateFormatter("%b %d, %Y"))
-		axis.grid(axis="y", linestyle="--", alpha=0.35)
-		axis.spines[["top", "right"]].set_visible(False)
-		figure.autofmt_xdate()
-		st.pyplot(figure, width="stretch")
-		plt.close(figure)
-
-	st.caption(
-		"Track a team's win percentage across saved snapshots to see whether its "
-		"current standing is part of a trend or a recent change."
-	)
+# Example usage:
+# history = analyze.get_standings_history()
+# top_10_acc_chart(history)
