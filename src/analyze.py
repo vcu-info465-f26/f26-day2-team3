@@ -29,6 +29,28 @@ STANDINGS_COLUMNS = [
 ]
 
 
+def get_standings_history() -> pd.DataFrame:
+	"""Return every dated standings snapshot stored in the database."""
+	read_only_uri = f"file:{DATABASE_PATH}?mode=ro"
+	with sqlite3.connect(read_only_uri, uri=True) as connection:
+		history = pd.read_sql_query(
+			"""
+			SELECT t.id AS team_id, t.full_name AS team, s.snapshot_date,
+			       s.wins, s.losses,
+			       COALESCE(
+			           s.win_percentage,
+			           1.0 * s.wins / NULLIF(s.wins + s.losses, 0)
+			       ) AS win_percentage
+			FROM standings AS s
+			JOIN teams AS t ON t.id = s.team_id
+			WHERE s.snapshot_date <> 'legacy'
+			ORDER BY date(s.snapshot_date), s.snapshot_date, t.full_name
+			""",
+			connection,
+		)
+	return history
+
+
 def get_conference_standings(season: int) -> pd.DataFrame:
 	"""Return the latest ACC standings snapshot for a season."""
 	read_only_uri = f"file:{DATABASE_PATH}?mode=ro"
