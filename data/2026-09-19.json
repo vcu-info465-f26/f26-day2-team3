@@ -1,0 +1,540 @@
+{
+  "conferences": [
+    {
+      "id": 1,
+      "name": "ACC",
+      "abbreviation": "ACC"
+    }
+  ],
+  "teams": [
+    {
+      "id": 1,
+      "conference": 1,
+      "college": "Boston College",
+      "name": "Eagles",
+      "full_name": "Boston College Eagles",
+      "abbreviation": "BC"
+    },
+    {
+      "id": 2,
+      "conference": 1,
+      "college": "California",
+      "name": "Golden Bears",
+      "full_name": "California Golden Bears",
+      "abbreviation": "CAL"
+    },
+    {
+      "id": 3,
+      "conference": 1,
+      "college": "Clemson",
+      "name": "Tigers",
+      "full_name": "Clemson Tigers",
+      "abbreviation": "CLEM"
+    },
+    {
+      "id": 4,
+      "conference": 1,
+      "college": "Duke",
+      "name": "Blue Devils",
+      "full_name": "Duke Blue Devils",
+      "abbreviation": "DUKE"
+    },
+    {
+      "id": 5,
+      "conference": 1,
+      "college": "Florida State",
+      "name": "Seminoles",
+      "full_name": "Florida State Seminoles",
+      "abbreviation": "FSU"
+    },
+    {
+      "id": 6,
+      "conference": 1,
+      "college": "Georgia Tech",
+      "name": "Yellow Jackets",
+      "full_name": "Georgia Tech Yellow Jackets",
+      "abbreviation": "GT"
+    },
+    {
+      "id": 7,
+      "conference": 1,
+      "college": "Louisville",
+      "name": "Cardinals",
+      "full_name": "Louisville Cardinals",
+      "abbreviation": "LOU"
+    },
+    {
+      "id": 8,
+      "conference": 1,
+      "college": "Miami",
+      "name": "Hurricanes",
+      "full_name": "Miami Hurricanes",
+      "abbreviation": "MIA"
+    },
+    {
+      "id": 9,
+      "conference": 1,
+      "college": "NC State",
+      "name": "Wolfpack",
+      "full_name": "NC State Wolfpack",
+      "abbreviation": "NCSU"
+    },
+    {
+      "id": 10,
+      "conference": 1,
+      "college": "North Carolina",
+      "name": "Tar Heels",
+      "full_name": "North Carolina Tar Heels",
+      "abbreviation": "UNC"
+    },
+    {
+      "id": 11,
+      "conference": 1,
+      "college": "Pittsburgh",
+      "name": "Panthers",
+      "full_name": "Pittsburgh Panthers",
+      "abbreviation": "PITT"
+    },
+    {
+      "id": 12,
+      "conference": 1,
+      "college": "SMU",
+      "name": "Mustangs",
+      "full_name": "SMU Mustangs",
+      "abbreviation": "SMU"
+    },
+    {
+      "id": 13,
+      "conference": 1,
+      "college": "Stanford",
+      "name": "Cardinal",
+      "full_name": "Stanford Cardinal",
+      "abbreviation": "STAN"
+    },
+    {
+      "id": 14,
+      "conference": 1,
+      "college": "Syracuse",
+      "name": "Orange",
+      "full_name": "Syracuse Orange",
+      "abbreviation": "SYR"
+    },
+    {
+      "id": 15,
+      "conference": 1,
+      "college": "Virginia",
+      "name": "Cavaliers",
+      "full_name": "Virginia Cavaliers",
+      "abbreviation": "UVA"
+    },
+    {
+      "id": 16,
+      "conference": 1,
+      "college": "Virginia Tech",
+      "name": "Hokies",
+      "full_name": "Virginia Tech Hokies",
+      "abbreviation": "VT"
+    },
+    {
+      "id": 17,
+      "conference": 1,
+      "college": "Wake Forest",
+      "name": "Demon Deacons",
+      "full_name": "Wake Forest Demon Deacons",
+      "abbreviation": "WAKE"
+    }
+  ],
+  "standings": [
+    {
+      "team": {
+        "id": 9,
+        "conference": 1,
+        "college": "NC State",
+        "name": "Wolfpack",
+        "full_name": "NC State Wolfpack",
+        "abbreviation": "NCSU"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 1,
+      "losses": 2,
+      "win_percentage": null,
+      "games_behind": 2,
+      "home_record": "1-0",
+      "away_record": "0-2",
+      "conference_record": "0-1"
+    },
+    {
+      "team": {
+        "id": 1,
+        "conference": 1,
+        "college": "Boston College",
+        "name": "Eagles",
+        "full_name": "Boston College Eagles",
+        "abbreviation": "BC"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 2,
+      "losses": 1,
+      "win_percentage": null,
+      "games_behind": 1,
+      "home_record": "2-0",
+      "away_record": "0-1",
+      "conference_record": "0-0"
+    },
+    {
+      "team": {
+        "id": 2,
+        "conference": 1,
+        "college": "California",
+        "name": "Golden Bears",
+        "full_name": "California Golden Bears",
+        "abbreviation": "CAL"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 2,
+      "losses": 1,
+      "win_percentage": 1,
+      "games_behind": 1,
+      "home_record": "1-1",
+      "away_record": "1-0",
+      "conference_record": "1-0"
+    },
+    {
+      "team": {
+        "id": 3,
+        "conference": 1,
+        "college": "Clemson",
+        "name": "Tigers",
+        "full_name": "Clemson Tigers",
+        "abbreviation": "CLEM"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 2,
+      "losses": 1,
+      "win_percentage": 1,
+      "games_behind": 1,
+      "home_record": "2-0",
+      "away_record": "0-1",
+      "conference_record": "1-0"
+    },
+    {
+      "team": {
+        "id": 4,
+        "conference": 1,
+        "college": "Duke",
+        "name": "Blue Devils",
+        "full_name": "Duke Blue Devils",
+        "abbreviation": "DUKE"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 3,
+      "losses": 0,
+      "win_percentage": 1,
+      "games_behind": null,
+      "home_record": "2-0",
+      "away_record": "1-0",
+      "conference_record": "1-0"
+    },
+    {
+      "team": {
+        "id": 5,
+        "conference": 1,
+        "college": "Florida State",
+        "name": "Seminoles",
+        "full_name": "Florida State Seminoles",
+        "abbreviation": "FSU"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 1,
+      "losses": 2,
+      "win_percentage": null,
+      "games_behind": 2,
+      "home_record": "1-1",
+      "away_record": "0-1",
+      "conference_record": "0-1"
+    },
+    {
+      "team": {
+        "id": 6,
+        "conference": 1,
+        "college": "Georgia Tech",
+        "name": "Yellow Jackets",
+        "full_name": "Georgia Tech Yellow Jackets",
+        "abbreviation": "GT"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 1,
+      "losses": 2,
+      "win_percentage": null,
+      "games_behind": 2,
+      "home_record": "1-2",
+      "away_record": "0-0",
+      "conference_record": "0-0"
+    },
+    {
+      "team": {
+        "id": 7,
+        "conference": 1,
+        "college": "Louisville",
+        "name": "Cardinals",
+        "full_name": "Louisville Cardinals",
+        "abbreviation": "LOU"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 2,
+      "losses": 1,
+      "win_percentage": 1,
+      "games_behind": 1,
+      "home_record": "2-0",
+      "away_record": "0-0",
+      "conference_record": "1-0"
+    },
+    {
+      "team": {
+        "id": 10,
+        "conference": 1,
+        "college": "North Carolina",
+        "name": "Tar Heels",
+        "full_name": "North Carolina Tar Heels",
+        "abbreviation": "UNC"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 2,
+      "losses": 1,
+      "win_percentage": null,
+      "games_behind": 1,
+      "home_record": "1-0",
+      "away_record": "0-1",
+      "conference_record": "0-1"
+    },
+    {
+      "team": {
+        "id": 12,
+        "conference": 1,
+        "college": "SMU",
+        "name": "Mustangs",
+        "full_name": "SMU Mustangs",
+        "abbreviation": "SMU"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 2,
+      "losses": 1,
+      "win_percentage": 0.5,
+      "games_behind": 1,
+      "home_record": "1-0",
+      "away_record": "1-1",
+      "conference_record": "1-1"
+    },
+    {
+      "team": {
+        "id": 13,
+        "conference": 1,
+        "college": "Stanford",
+        "name": "Cardinal",
+        "full_name": "Stanford Cardinal",
+        "abbreviation": "STAN"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 1,
+      "losses": 2,
+      "win_percentage": null,
+      "games_behind": 2,
+      "home_record": "1-1",
+      "away_record": "0-1",
+      "conference_record": "0-2"
+    },
+    {
+      "team": {
+        "id": 14,
+        "conference": 1,
+        "college": "Syracuse",
+        "name": "Orange",
+        "full_name": "Syracuse Orange",
+        "abbreviation": "SYR"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 1,
+      "losses": 2,
+      "win_percentage": null,
+      "games_behind": 2,
+      "home_record": "1-1",
+      "away_record": "0-1",
+      "conference_record": "0-2"
+    },
+    {
+      "team": {
+        "id": 15,
+        "conference": 1,
+        "college": "Virginia",
+        "name": "Cavaliers",
+        "full_name": "Virginia Cavaliers",
+        "abbreviation": "UVA"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 2,
+      "losses": 1,
+      "win_percentage": 1,
+      "games_behind": 1,
+      "home_record": "2-0",
+      "away_record": "0-0",
+      "conference_record": "1-0"
+    },
+    {
+      "team": {
+        "id": 16,
+        "conference": 1,
+        "college": "Virginia Tech",
+        "name": "Hokies",
+        "full_name": "Virginia Tech Hokies",
+        "abbreviation": "VT"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 3,
+      "losses": 0,
+      "win_percentage": null,
+      "games_behind": null,
+      "home_record": "2-0",
+      "away_record": "1-0",
+      "conference_record": "0-0"
+    },
+    {
+      "team": {
+        "id": 17,
+        "conference": 1,
+        "college": "Wake Forest",
+        "name": "Demon Deacons",
+        "full_name": "Wake Forest Demon Deacons",
+        "abbreviation": "WAKE"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 2,
+      "losses": 1,
+      "win_percentage": null,
+      "games_behind": 1,
+      "home_record": "1-1",
+      "away_record": "1-0",
+      "conference_record": "0-1"
+    },
+    {
+      "team": {
+        "id": 11,
+        "conference": 1,
+        "college": "Pittsburgh",
+        "name": "Panthers",
+        "full_name": "Pittsburgh Panthers",
+        "abbreviation": "PITT"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 3,
+      "losses": 0,
+      "win_percentage": 1,
+      "games_behind": null,
+      "home_record": "3-0",
+      "away_record": "0-0",
+      "conference_record": "1-0"
+    },
+    {
+      "team": {
+        "id": 8,
+        "conference": 1,
+        "college": "Miami",
+        "name": "Hurricanes",
+        "full_name": "Miami Hurricanes",
+        "abbreviation": "MIA"
+      },
+      "conference": {
+        "id": 1,
+        "name": "ACC",
+        "abbreviation": "ACC"
+      },
+      "season": 2026,
+      "wins": 3,
+      "losses": 0,
+      "win_percentage": 1,
+      "games_behind": null,
+      "home_record": "1-0",
+      "away_record": "2-0",
+      "conference_record": "2-0"
+    }
+  ]
+}

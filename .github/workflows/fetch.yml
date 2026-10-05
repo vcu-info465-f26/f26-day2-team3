@@ -2,8 +2,8 @@ name: Fetch NCAAF standings Data in Json
 
 on:
   schedule:
-    - cron: "0 4 * * *"
-    - cron: "0 5 * * *"
+    - cron: "0 7 * * *"
+    - cron: "0 8 * * *"
   workflow_dispatch:
     inputs:
       season:
@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   update-standings:
@@ -20,10 +21,14 @@ jobs:
     env:
       SEASON: ${{ github.event.inputs.season || '2026' }}
       BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_REVIEWER: ruizapvcu
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,34 +39,66 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Check Eastern schedule time
+      - name: Check Pacific schedule time
         id: schedule
         run: |
-          run_date="$(TZ=America/New_York date '+%Y-%m-%d')"
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$(TZ=America/New_York date '+%H:%M')" == "00:00" ]]; then
+          run_date="$(TZ=America/Los_Angeles date '+%Y-%m-%d')"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$(TZ=America/Los_Angeles date '+%H:%M')" == "00:00" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
             echo "date=$run_date" >> "$GITHUB_OUTPUT"
+            echo "branch=fetch/${run_date}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Fetch standings
-        run: SNAPSHOT_DATE="${{ steps.schedule.outputs.date }}" python src/fetch.py --season "$SEASON"
+      - name: Skip if today's snapshot already exists on main
+        id: existing
         if: steps.schedule.outputs.run == 'true'
+        run: |
+          if [[ -f "data/${{ steps.schedule.outputs.date }}.json" ]]; then
+            echo "Snapshot for ${{ steps.schedule.outputs.date }} already exists on main; skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create snapshot branch from main
+        if: steps.schedule.outputs.run == 'true' && steps.existing.outputs.skip == 'false'
+        run: git checkout -b "${{ steps.schedule.outputs.branch }}"
+
+      - name: Fetch standings
+        if: steps.schedule.outputs.run == 'true' && steps.existing.outputs.skip == 'false'
+        run: SNAPSHOT_DATE="${{ steps.schedule.outputs.date }}" python src/fetch.py --season "$SEASON"
 
       - name: Verify daily snapshot
+        if: steps.schedule.outputs.run == 'true' && steps.existing.outputs.skip == 'false'
         run: test -f "data/${{ steps.schedule.outputs.date }}.json"
-        if: steps.schedule.outputs.run == 'true'
 
-      - name: Commit daily snapshot
+      - name: Commit snapshot
+        id: commit
+        if: steps.schedule.outputs.run == 'true' && steps.existing.outputs.skip == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f "data/${{ steps.schedule.outputs.date }}.json"
           if git diff --cached --quiet; then
             echo "No snapshot changes to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "Add NCAAF snapshot for ${{ steps.schedule.outputs.date }}"
-          git push
-        if: steps.schedule.outputs.run == 'true'
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Push snapshot branch
+        if: steps.commit.outputs.changed == 'true'
+        run: git push -u origin "${{ steps.schedule.outputs.branch }}"
+
+      - name: Open pull request for review
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          gh pr create \
+            --base main \
+            --head "${{ steps.schedule.outputs.branch }}" \
+            --title "Add NCAAF snapshot for ${{ steps.schedule.outputs.date }}" \
+            --body "Automated snapshot fetch for ${{ steps.schedule.outputs.date }}." \
+            --reviewer "$PR_REVIEWER"
