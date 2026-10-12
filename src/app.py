@@ -126,7 +126,7 @@ def standings_chart(
     ax.set_xlim(history["snapshot_date"].min(), last_date + pd.Timedelta(days=3))
     ax.set_ylim(team_count + 0.7, 0.3)
     ax.set_yticks(range(1, team_count + 1))
-    ax.set_ylabel("ACC rank (1 = first)")
+    ax.set_ylabel("ACC Rank (1 = first)")
     ax.set_xlabel("Week / Snapshot Date")
     ax.set_title(f"{season} ACC Season Overview", loc="left", weight="bold", pad=16)
     snapshot_dates = sorted(history["snapshot_date"].unique())
@@ -191,3 +191,40 @@ def render_animation(snapshot_history: pd.DataFrame, season: int) -> None:
 
 
     show_standings_animation()
+
+
+
+
+def main() -> None:
+    st.set_page_config(page_title="ACC FBS Standings", layout="wide")
+    st.markdown(
+        "<style>.block-container {padding-top: 1rem; padding-bottom: 1rem;}</style>",
+        unsafe_allow_html=True,
+    )
+    st.title("2026 ACC FBS Standings")
+
+
+    with st.spinner("Building database from the latest snapshot..."):
+        build_db.main()
+
+
+    season = 2026
+    standings = analyze.get_conference_standings(season)
+
+
+    if standings.empty:
+        st.info(f"No ACC standings found for the {season} season yet.")
+    else:
+        history = get_standings_history(season)
+        standings_column, animation_column = st.columns(2, gap="large")
+        with standings_column, st.container(border=True):
+            metric = render_standings(standings)
+        with animation_column, st.container(border=True):
+            render_animation(history, season)
+        render_raw_standings(history, metric)
+
+
+
+
+if __name__ == "__main__":
+    main()
