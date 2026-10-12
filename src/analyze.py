@@ -5,27 +5,32 @@ from pathlib import Path
 import argparse
 import sqlite3
 
+
 import pandas as pd
+
+
 
 
 DATABASE_PATH = Path(__file__).resolve().parent.parent / "data" / "bdl.db"
 
 
+
+
 STANDINGS_COLUMNS = [
-	"team_id",
-	"season",
-	"snapshot_date",
-	"conference",
-	"city",
-	"name",
-	"abbreviation",
-	"wins",
-	"losses",
-	"win_percentage",
-	"games_behind",
-	"home_record",
-	"away_record",
-	"conference_record",
+    "team_id",
+    "season",
+    "snapshot_date",
+    "conference",
+    "city",
+    "name",
+    "abbreviation",
+    "wins",
+    "losses",
+    "win_percentage",
+    "games_behind",
+    "home_record",
+    "away_record",
+    "conference_record",
 ]
 
 
@@ -89,19 +94,22 @@ def get_conference_standings(season: int) -> pd.DataFrame:
 
 
 def get_conferences() -> list[tuple[str, int, str]]:
-	with sqlite3.connect(DATABASE_PATH) as connection:
-		return connection.execute(
-			"SELECT name, id, abbreviation FROM conferences ORDER BY id"
-		).fetchall()
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        return connection.execute(
+            "SELECT name, id, abbreviation FROM conferences ORDER BY id"
+        ).fetchall()
+
+
 
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description="Show the latest ACC standings.")
-	parser.add_argument("--season", type=int, default=2026)
-	args = parser.parse_args()
+    parser = argparse.ArgumentParser(description="Show the latest ACC standings.")
+    parser.add_argument("--season", type=int, default=2026)
+    args = parser.parse_args()
 
-	standings = get_conference_standings(args.season)
-	if standings.empty:
-		print(f"No ACC standings found for the {args.season} season.")
-	else:
-		print(standings.to_string(index=False))
+
+    standings = get_conference_standings(args.season)
+    if standings.empty:
+        print(f"No ACC standings found for the {args.season} season.")
+    else:
+        print(standings.to_string(index=False))
