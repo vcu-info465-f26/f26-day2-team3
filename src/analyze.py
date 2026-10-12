@@ -34,58 +34,63 @@ STANDINGS_COLUMNS = [
 ]
 
 
+def get_standings_history(season: int) -> pd.DataFrame:
+	"""Return all ACC standings snapshots for a season."""
+	read_only_uri = f"file:{DATABASE_PATH}?mode=ro"
+	with sqlite3.connect(read_only_uri, uri=True) as connection:
+		standings = pd.read_sql_query(
+			"""
+			SELECT team_id, season, snapshot_date, wins, losses,
+			       win_percentage, games_behind, home_record, away_record,
+			       conference_record
+			FROM standings
+			WHERE conference_id = 1 AND season = ? AND snapshot_date <> 'legacy'
+			""",
+			connection,
+			params=(season,),
+		)
+		teams = pd.read_sql_query(
+			"""
+			SELECT id AS team_id, city, name, abbreviation
+			FROM teams
+			WHERE conference_id = 1
+			""",
+			connection,
+		)
+		conferences = pd.read_sql_query(
+			"""
+			SELECT id AS conference_id, name AS conference
+			FROM conferences
+			WHERE id = 1
+			""",
+			connection,
+		)
+
+	if standings.empty:
+		return pd.DataFrame(columns=STANDINGS_COLUMNS)
+
+	standings["conference_id"] = 1
+	result = (
+		standings.merge(teams, on="team_id", how="inner")
+		.merge(conferences, on="conference_id", how="inner")
+		.loc[:, STANDINGS_COLUMNS]
+		.sort_values(["snapshot_date", "wins", "losses", "city"], ascending=[True, False, True, True])
+		.reset_index(drop=True)
+	)
+	return result
 
 
 def get_conference_standings(season: int) -> pd.DataFrame:
-    """Return the latest ACC standings snapshot for a season."""
-    read_only_uri = f"file:{DATABASE_PATH}?mode=ro"
-    with sqlite3.connect(read_only_uri, uri=True) as connection:
-        standings = pd.read_sql_query(
-            """
-            SELECT team_id, season, snapshot_date, wins, losses,
-                   win_percentage, games_behind, home_record, away_record,
-                   conference_record
-            FROM standings
-            WHERE conference_id = 1 AND season = ? AND snapshot_date <> 'legacy'
-            """,
-            connection,
-            params=(season,),
-        )
-        teams = pd.read_sql_query(
-            """
-            SELECT id AS team_id, city, name, abbreviation
-            FROM teams
-            WHERE conference_id = 1
-            """,
-            connection,
-        )
-        conferences = pd.read_sql_query(
-            """
-            SELECT id AS conference_id, name AS conference
-            FROM conferences
-            WHERE id = 1
-            """,
-            connection,
-        )
-
-
-    if standings.empty:
-        return pd.DataFrame(columns=STANDINGS_COLUMNS)
-
-
-    latest_snapshot = standings["snapshot_date"].max()
-    standings = standings[standings["snapshot_date"] == latest_snapshot]
-    standings["conference_id"] = 1
-    result = (
-        standings.merge(teams, on="team_id", how="inner")
-        .merge(conferences, on="conference_id", how="inner")
-        .loc[:, STANDINGS_COLUMNS]
-        .sort_values(["wins", "losses", "city"], ascending=[False, True, True])
-        .reset_index(drop=True)
-    )
-    return result
-
-
+	"""Return the latest ACC standings snapshot for a season."""
+	standings = get_standings_history(season)
+	if standings.empty:
+		return standings
+	latest_snapshot = standings["snapshot_date"].max()
+	return (
+		standings[standings["snapshot_date"] == latest_snapshot]
+		.sort_values(["wins", "losses", "city"], ascending=[False, True, True])
+		.reset_index(drop=True)
+	)
 
 
 def get_conferences() -> list[tuple[str, int, str]]:
