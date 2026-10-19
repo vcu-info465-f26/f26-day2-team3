@@ -2,3 +2,4 @@
 data/*.db
 .env
 src/__pycache__/
+.streamlit/
