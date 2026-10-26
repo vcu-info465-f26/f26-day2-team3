@@ -26,6 +26,7 @@ jobs:
     env:
       SEASON: ${{ github.event.inputs.season || '2026' }}
       BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }} # Ensure your LLM key is exposed to the runner
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
@@ -126,19 +127,34 @@ jobs:
         if: steps.weekly.outputs.skip == 'false'
         run: test -f "data/${{ steps.schedule.outputs.date }}.json"
 
-      - name: Commit snapshot
+      - name: Generate daily summary
+        if: steps.weekly.outputs.skip == 'false'
+        run: |
+          # Fail-safe: '|| echo ...' ensures a crash in summarize.py doesn't kill the workflow
+          python src/summarize.py || echo "Summary model call failed; carrying on to commit snapshot and retaining old summary."
+
+      - name: Commit snapshot and summary
         id: commit
         if: steps.weekly.outputs.skip == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Stage the new data snapshot
           git add -f "data/${{ steps.schedule.outputs.date }}.json"
+          
+          # Stage the summary file if it exists (whether updated or untouched)
+          if [[ -f "data/summary.md" ]]; then
+            git add "data/summary.md"
+          fi
+          
           if git diff --cached --quiet; then
             echo "No snapshot changes to commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "Add NCAAF snapshot for ${{ steps.schedule.outputs.date }}"
+          
+          git commit -m "Add NCAAF snapshot and update summary for ${{ steps.schedule.outputs.date }}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Push snapshot branch
