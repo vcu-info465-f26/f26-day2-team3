@@ -1,5 +1,6 @@
 from pathlib import Path
 from io import BytesIO
+from concurrent.futures import Future, ThreadPoolExecutor
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -11,6 +12,9 @@ import streamlit as st
 
 import analyze
 import build_db
+import chat
+
+CHAT_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="chat")
 
 IMAGE_DIRECTORY = Path(__file__).resolve().parent.parent / "img"
 TEAM_COLORS = {
@@ -252,6 +256,83 @@ def render_raw_standings(history: pd.DataFrame, metric: str) -> None:
         st.dataframe(table, width="stretch", hide_index=True)
 
 
+def _answer_after_prior_turns(
+    question: str,
+    previous_turns: list[dict],
+    dashboard_context: str,
+) -> str:
+	history = []
+	for turn in previous_turns:
+		history.append({"role": "user", "content": turn["question"]})
+		try:
+			answer = turn["future"].result()
+		except Exception:
+			answer = "No response was available for this earlier question."
+		history.append({"role": "assistant", "content": answer})
+	return chat.answer_question(question, history, dashboard_context)
+
+
+@st.fragment(run_every="1s")
+def render_chat(dashboard_context: str) -> None:
+    st.subheader("Ask about these standings")
+    if "chat_turns" not in st.session_state:
+        turns = []
+        legacy_messages = st.session_state.pop("chat_messages", [])
+        for message in legacy_messages:
+            if message.get("role") == "user":
+                future = Future()
+                turns.append({"question": message["content"], "future": future})
+            elif message.get("role") == "assistant" and turns:
+                future = turns[-1]["future"]
+                if not future.done():
+                    future.set_result(message["content"])
+        for turn in turns:
+            if not turn["future"].done():
+                turn["future"].set_result(
+                    "No response was available for this earlier question."
+                )
+        st.session_state.chat_turns = turns
+
+    turns = st.session_state.chat_turns
+    for turn in turns:
+        with st.chat_message("user"):
+            st.markdown(turn["question"])
+
+        future = turn["future"]
+        if future.done() and "answer" not in turn and "error" not in turn:
+            try:
+                turn["answer"] = future.result()
+            except Exception as error:
+                turn["error"] = str(error)
+
+        with st.chat_message("assistant"):
+            if "error" in turn:
+                st.error(turn["error"])
+            elif "answer" in turn:
+                st.markdown(turn["answer"])
+            elif future.running():
+                st.caption("Working on this question. Any rate-limit wait will be retried automatically.")
+            else:
+                st.caption("Queued behind an earlier question.")
+
+    question = st.chat_input("Ask about the standings shown above")
+    if not question:
+        return
+
+    previous_turns = turns.copy()
+    future = CHAT_EXECUTOR.submit(
+        _answer_after_prior_turns,
+        question,
+        previous_turns,
+        dashboard_context,
+    )
+    turns.append({"question": question, "future": future})
+    with st.chat_message("user"):
+        st.markdown(question)
+    with st.chat_message("assistant"):
+        st.caption("Question accepted. Waiting for the chat model...")
+
+
 def main() -> None:
     st.set_page_config(page_title="ACC FBS Standings", layout="wide")
     st.markdown(
@@ -283,6 +364,8 @@ def main() -> None:
     with animation_column, st.container(border=True):
         render_animation(history, season)
     render_raw_standings(history, metric)
+    dashboard_context = chat.build_dashboard_context(standings, history, metric)
+    render_chat(dashboard_context)
 
 
 if __name__ == "__main__":
