@@ -13,4 +13,4 @@
 
 ## AI-generated overview
 
-The conference picture shows Miami leading the pack, followed closely by Wake Forest and SMU, while Pittsburgh and Virginia Tech sit just behind them. Clemson, Duke and North Carolina occupy a solid middle tier, with Louisville and Virginia also competing at a similar level. Boston College and NC State share comparable standings, and California, Florida State and Stanford are grouped together in the lower half. Georgia Tech and Syracuse round out the bottom of the standings.
+The conference picture remains tightly contested, with Miami and Wake Forest leading the pack while a cluster of teams including SMU, Pittsburgh, Virginia Tech, Clemson, Duke and North Carolina jockey for position just behind them. Louisville, Virginia, Boston College and NC State sit in the middle of the standings, and California, Florida State, Stanford and Georgia Tech round out the lower tier, each striving to improve their standing as the season progresses.
