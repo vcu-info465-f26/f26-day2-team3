@@ -17,6 +17,7 @@ import chat
 CHAT_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="chat")
 
 IMAGE_DIRECTORY = Path(__file__).resolve().parent.parent / "img"
+SUMMARY_PATH = Path(__file__).resolve().parent.parent / "data" / "summary.md"
 TEAM_COLORS = {
     "BC": ("#8A100B", "#BC9B6A"),
     "CAL": ("#003262", "#FDB515"),
@@ -333,6 +334,18 @@ def render_chat(dashboard_context: str) -> None:
         st.caption("Question accepted. Waiting for the chat model...")
 
 
+def render_saved_summary() -> None:
+    st.subheader("Generated standings summary")
+    if not SUMMARY_PATH.is_file():
+        st.info("No generated summary is available yet.")
+        return
+
+    summary = SUMMARY_PATH.read_text(encoding="utf-8").splitlines()
+    if summary and summary[0].startswith("# "):
+        summary = summary[1:]
+    st.markdown("\n".join(summary))
+
+
 def main() -> None:
     st.set_page_config(page_title="ACC FBS Standings", layout="wide")
     st.markdown(
@@ -366,6 +379,7 @@ def main() -> None:
     render_raw_standings(history, metric)
     dashboard_context = chat.build_dashboard_context(standings, history, metric)
     render_chat(dashboard_context)
+    render_saved_summary()
 
 
 if __name__ == "__main__":
