@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from threading import Lock
 
+import openai
 import pandas as pd
 import requests
 import streamlit as st
@@ -13,8 +14,9 @@ import streamlit as st
 
 GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
 DEFAULT_MODEL = "openai/gpt-oss-20b"
-API_MIN_INTERVAL_SECONDS = 60
+API_MIN_INTERVAL_SECONDS = 2
 MAX_RATE_LIMIT_RETRIES = 2
+MAX_HISTORY_MESSAGES = 6
 
 _api_request_lock = Lock()
 _next_api_request_at = 0.0
@@ -27,17 +29,15 @@ contain enough information to answer, say that the dashboard data does not
 provide the answer. For numeric answers, state the relevant team, metric, and
 snapshot date when available. Do not guess or extrapolate.
 
-Historical data is compact: historical_teams maps team indexes to names,
-and historical_wins_losses contains [snapshot_date, [[team_index, wins, losses], ...]] rows.
+weekly_standings lists each football week with its final snapshot_date and the
+ACC standings already ranked as "rank. Team wins-losses". Rank 1 is first place
+and the highest rank number is last place. Read ranks directly from the list for
+the week the user asks about; never use a different week's snapshot. If teams
+share the same record, mention that they are tied. If a requested week is not
+listed, say the dashboard has no data for that week. Keep answers short.
 
 Dashboard context:
 """
-
-
-def _records(frame: pd.DataFrame) -> list[dict]:
-	if frame.empty:
-		return []
-	return json.loads(frame.to_json(orient="records", date_format="iso"))
 
 
 def build_dashboard_context(
@@ -48,67 +48,31 @@ def build_dashboard_context(
 	if standings.empty:
 		return json.dumps({"summary": "No standings are currently displayed."})
 
-	current = standings.copy()
 	metric = selected_metric if selected_metric in {"wins", "losses"} else "wins"
-	other_metric = "losses" if metric == "wins" else "wins"
-	current = current.sort_values(
-		[metric, other_metric, "city"],
-		ascending=[False, True, True],
-	)
-
 	snapshot_date = str(standings["snapshot_date"].iloc[0])
 	season = int(standings["season"].iloc[0])
-	if not history.empty:
-		dates = pd.to_datetime(history["snapshot_date"], errors="coerce").dropna()
-		date_range = {
-			"start": dates.min().date().isoformat(),
-			"end": dates.max().date().isoformat(),
-		}
-		team_rows = (
-			history[["abbreviation", "city"]]
-			.drop_duplicates()
-			.sort_values("abbreviation")
-			.reset_index(drop=True)
-		)
-		team_ids = {
-			row.abbreviation: index
-			for index, row in enumerate(team_rows.itertuples(index=False))
-		}
-		historical_wins_losses = []
-		for date, snapshot in history.groupby("snapshot_date", sort=True):
-			rows = [
-				[
-					team_ids[row.abbreviation],
-					None if pd.isna(row.wins) else int(row.wins),
-					None if pd.isna(row.losses) else int(row.losses),
-				]
-				for row in snapshot[["abbreviation", "wins", "losses"]].itertuples(index=False)
-			]
-			historical_wins_losses.append([str(date), rows])
-		historical_teams = [
-			{"id": index, "abbreviation": row.abbreviation, "city": row.city}
-			for index, row in enumerate(team_rows.itertuples(index=False))
-		]
-	else:
-		date_range = {"start": snapshot_date, "end": snapshot_date}
-		historical_teams = []
-		historical_wins_losses = []
 
-	leader = current.iloc[0]
-	summary = (
-		f"The {season} ACC standings show {len(standings)} teams in the latest "
-		f"snapshot dated {snapshot_date}. Sorted by {metric}, "
-		f"{leader['city']} leads with {int(leader[metric])} {metric}."
-	)
+	weekly_standings = []
+	if not history.empty:
+		final_dates = history.groupby("week", sort=False)["snapshot_date"].max()
+		for week, date in sorted(final_dates.items(), key=lambda item: item[1]):
+			snapshot = history[history["snapshot_date"] == date].sort_values(
+				["wins", "losses", "city"], ascending=[False, True, True],
+			)
+			weekly_standings.append({
+				"week": week,
+				"snapshot_date": str(date),
+				"standings": [
+					f"{rank}. {row.city} {row.name} {int(row.wins)}-{int(row.losses)}"
+					for rank, row in enumerate(snapshot.itertuples(index=False), start=1)
+				],
+			})
+
 	context = {
-		"summary": summary,
 		"season": season,
-		"date_range_of_displayed_history": date_range,
 		"latest_snapshot_date": snapshot_date,
 		"chart_metric_selected": metric,
-		"current_standings": _records(current),
-		"historical_teams": historical_teams,
-		"historical_wins_losses": historical_wins_losses,
+		"weekly_standings": weekly_standings,
 	}
 	return json.dumps(context, ensure_ascii=True, separators=(",", ":"))
 
@@ -211,19 +175,16 @@ def answer_question(
 	}]
 	messages.extend(
 		{"role": message["role"], "content": message["content"]}
-		for message in history
+		for message in history[-MAX_HISTORY_MESSAGES:]
 		if message.get("role") in {"user", "assistant"}
 		and isinstance(message.get("content"), str)
 	)
 	messages.append({"role": "user", "content": question})
 
-	response = _post_chat_completion(
-		api_key,
-		{
-			"model": os.getenv("GROQ_MODEL", DEFAULT_MODEL),
-			"messages": messages,
-			"temperature": 0,
-		},
-	)
+	model = os.getenv("GROQ_MODEL", DEFAULT_MODEL)
+	payload = {"model": model, "messages": messages, "temperature": 0}
+	if model.startswith("openai/gpt-oss"):
+		payload["reasoning_effort"] = "low"
+	response = _post_chat_completion(api_key, payload)
 	response.raise_for_status()
 	return response.json()["choices"][0]["message"]["content"].strip()

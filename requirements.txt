@@ -6,8 +6,12 @@
 
 
 requests>=2.32,<3
+urllib3>=2,<3
 pandas>=3.0,<4
 matplotlib>=3.9,<4
-streamlit>=1.38,<2
-python-dotenv>=1.0,<2
+pillow>=10,<13
 streamlit>=1.49,<2
+python-dotenv>=1.0,<2
+streamlit-image-coordinates>=0.4.1,<1
+cfbd>=5.0,<6
+openai>=1.0,<3
