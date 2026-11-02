@@ -130,8 +130,15 @@ jobs:
       - name: Generate daily summary
         if: steps.weekly.outputs.skip == 'false'
         run: |
-          # Fail-safe: '|| echo ...' ensures a crash in summarize.py doesn't kill the workflow
-          python src/summarize.py || echo "Summary model call failed; carrying on to commit snapshot and retaining old summary."
+          # Fail-safe: a summarize.py failure must not kill the workflow (the
+          # snapshot still gets committed), and a partially written or empty
+          # summary.md must never replace yesterday's summary. On failure,
+          # restore the tracked summary.md exactly as it was, or delete any
+          # partial file if summary.md was never tracked.
+          if ! python src/summarize.py; then
+            echo "Summary model call failed; restoring previous summary and carrying on to commit snapshot."
+            git checkout -- data/summary.md 2>/dev/null || rm -f data/summary.md
+          fi
 
       - name: Commit snapshot and summary
         id: commit
