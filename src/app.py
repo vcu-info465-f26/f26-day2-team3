@@ -13,6 +13,7 @@ import analyze
 import build_db
 
 IMAGE_DIRECTORY = Path(__file__).resolve().parent.parent / "img"
+SUMMARY_PATH = Path(__file__).resolve().parent.parent / "data" / "summary.md"
 TEAM_COLORS = {
     "BC": ("#8A100B", "#BC9B6A"),
     "CAL": ("#003262", "#FDB515"),
@@ -252,6 +253,18 @@ def render_raw_standings(history: pd.DataFrame, metric: str) -> None:
         st.dataframe(table, width="stretch", hide_index=True)
 
 
+def render_saved_summary() -> None:
+    st.subheader("Generated standings summary")
+    if not SUMMARY_PATH.is_file():
+        st.info("No generated summary is available yet.")
+        return
+
+    summary = SUMMARY_PATH.read_text(encoding="utf-8").splitlines()
+    if summary and summary[0].startswith("# "):
+        summary = summary[1:]
+    st.markdown("\n".join(summary))
+
+
 def main() -> None:
     st.set_page_config(page_title="ACC FBS Standings", layout="wide")
     st.markdown(
@@ -283,6 +296,7 @@ def main() -> None:
     with animation_column, st.container(border=True):
         render_animation(history, season)
     render_raw_standings(history, metric)
+    render_saved_summary()
 
 
 if __name__ == "__main__":
