@@ -153,13 +153,6 @@ if __name__ == "__main__":
         raise SystemExit(
             "Error: an API key is required. Set BALLDONTLIE_API_KEY or pass --api-key."
         )
-    today_snapshot = DATA_DIR / f"{datetime.now(timezone.utc):%Y-%m-%d}.json"
-    if today_snapshot.exists():
-        logger.info(
-            "Today's snapshot already exists at %s; skipping API requests.",
-            today_snapshot,
-        )
-        raise SystemExit(0)
 
     logger.info("Starting ACC data fetch for season %d", args.season)
     client = ApiClient(args.api_key)

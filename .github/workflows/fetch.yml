@@ -2,9 +2,8 @@ name: Fetch NCAAF standings Data in Json
 
 on:
   schedule:
-    - cron: "59 3 18,24,25 10 *"
-    - cron: "59 3 1 11 *"
-    - cron: "59 4 7,8,14,15,21,22,28,29 11 *"
+    # 1. Updated to run daily at 3 AM EST (8 AM UTC)
+    - cron: "0 8 * * *"
   workflow_dispatch:
     inputs:
       season:
@@ -22,7 +21,7 @@ concurrency:
 
 jobs:
   update-standings:
-    if: github.event_name == 'schedule'
+    # 2. Removed the "if: github.event_name == 'schedule'" to allow manual runs
     runs-on: ubuntu-latest
     env:
       SEASON: ${{ github.event.inputs.season || '2026' }}
@@ -46,10 +45,14 @@ jobs:
           else
             run_date="$(TZ=America/New_York date '+%Y-%m-%d')"
           fi
-          if [[ "${run_date:0:4}" != "$SEASON" ]]; then
+          
+          # Allow games in January of the following year (e.g. Jan 1, 2027 for the 2026 season)
+          NEXT_SEASON=$((SEASON + 1))
+          if [[ "${run_date:0:4}" != "$SEASON" && "${run_date:0:4}" != "$NEXT_SEASON" ]]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          
           case "${run_date:5}" in
             10-17) week=7 ;;
             10-23|10-24) week=8 ;;
@@ -58,26 +61,68 @@ jobs:
             11-13|11-14) week=11 ;;
             11-20|11-21) week=12 ;;
             11-27|11-28) week=13 ;;
+            12-04|12-05) week=14 ;;
+            12-12) week=15 ;;
+            12-15|12-16) week=bowls ;;
+            12-18|12-19) week=cfp-first-round ;;
+            12-30|01-01) week=cfp-quarterfinals ;;
             *) echo "run=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
           esac
+          
           echo "run=true" >> "$GITHUB_OUTPUT"
           echo "date=$run_date" >> "$GITHUB_OUTPUT"
           echo "week=$week" >> "$GITHUB_OUTPUT"
           echo "branch=fetch/${SEASON}-week-${week}" >> "$GITHUB_OUTPUT"
 
-      - name: Skip if today's snapshot already exists on main
-        id: existing
+      - name: Set up Python
         if: steps.schedule.outputs.run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.schedule.outputs.run == 'true'
+        run: python -m pip install -r requirements.txt
+
+      # 3 & 4. Graceful failure and cmp check for data differences
+      - name: Fetch standings and compare data
+        id: fetch
+        if: steps.schedule.outputs.run == 'true'
+        continue-on-error: true # Fails gracefully without breaking the workflow
+        env:
+          SNAPSHOT_DATE: ${{ steps.schedule.outputs.date }}
         run: |
-          if [[ -f "data/${{ steps.schedule.outputs.date }}.json" ]]; then
-            echo "Snapshot for ${{ steps.schedule.outputs.date }} already exists on main; skipping."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fetch_directory="$(mktemp -d)"
+          trap 'rm -rf "$fetch_directory"' EXIT
+          mkdir -p "$fetch_directory/src"
+          cp src/fetch.py "$fetch_directory/src/fetch.py"
+          
+          if python "$fetch_directory/src/fetch.py" --season "$SEASON"; then
+            snapshots=("$fetch_directory"/data/*.json)
+            if [[ ${#snapshots[@]} -eq 1 && -f "${snapshots[0]}" ]]; then
+              mkdir -p data
+              latest_file=$(ls data/????-??-??.json 2>/dev/null | sort | tail -n 1)
+              
+              if [[ -n "$latest_file" ]] && cmp -s "${snapshots[0]}" "$latest_file"; then
+                echo "Data matches the latest commit exactly ($latest_file). Skipping branch creation and summary."
+                echo "changed=false" >> "$GITHUB_OUTPUT"
+              else
+                echo "New data found. Proceeding with branch creation."
+                mv "${snapshots[0]}" "data/$SNAPSHOT_DATE.json"
+                echo "changed=true" >> "$GITHUB_OUTPUT"
+              fi
+            else
+              echo "Fetch succeeded but did not produce exactly one JSON file."
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Fetch script failed. Check logs for details."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create or reuse weekly snapshot branch
-        if: steps.schedule.outputs.run == 'true' && steps.existing.outputs.skip == 'false'
+        if: steps.fetch.outputs.changed == 'true'
         env:
           BRANCH: ${{ steps.schedule.outputs.branch }}
         run: |
@@ -88,62 +133,21 @@ jobs:
             git checkout -b "$BRANCH"
           fi
 
-      - name: Skip if snapshot already exists on weekly branch
-        id: weekly
-        if: steps.schedule.outputs.run == 'true' && steps.existing.outputs.skip == 'false'
-        run: |
-          if [[ -f "data/${{ steps.schedule.outputs.date }}.json" ]]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Set up Python
-        if: steps.weekly.outputs.skip == 'false'
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Install dependencies
-        if: steps.weekly.outputs.skip == 'false'
-        run: python -m pip install -r requirements.txt
-
-      - name: Fetch standings
-        if: steps.weekly.outputs.skip == 'false'
-        env:
-          SNAPSHOT_DATE: ${{ steps.schedule.outputs.date }}
-        run: |
-          fetch_directory="$(mktemp -d)"
-          trap 'rm -rf "$fetch_directory"' EXIT
-          mkdir -p "$fetch_directory/src"
-          cp src/fetch.py "$fetch_directory/src/fetch.py"
-          python "$fetch_directory/src/fetch.py" --season "$SEASON"
-          snapshots=("$fetch_directory"/data/*.json)
-          [[ ${#snapshots[@]} -eq 1 && -f "${snapshots[0]}" ]]
-          mkdir -p data
-          mv "${snapshots[0]}" "data/$SNAPSHOT_DATE.json"
-
-      - name: Verify daily snapshot
-        if: steps.weekly.outputs.skip == 'false'
-        run: test -f "data/${{ steps.schedule.outputs.date }}.json"
-
+      # 5. Passed --data_file and added continue-on-error for the LLM
       - name: Generate daily summary
-        if: steps.weekly.outputs.skip == 'false'
+        if: steps.fetch.outputs.changed == 'true'
+        continue-on-error: true # Fails gracefully if the LLM API is down
         run: |
-          # Fail-safe: a summarize.py failure must not kill the workflow (the
-          # snapshot still gets committed), and a partially written or empty
-          # summary.md must never replace yesterday's summary. On failure,
-          # restore the tracked summary.md exactly as it was, or delete any
-          # partial file if summary.md was never tracked.
-          if ! python src/summarize.py; then
+          NEW_DATA_FILE="data/${{ steps.schedule.outputs.date }}.json"
+          
+          if ! python src/summarize.py --data_file "$NEW_DATA_FILE"; then
             echo "Summary model call failed; restoring previous summary and carrying on to commit snapshot."
             git checkout -- data/summary.md 2>/dev/null || rm -f data/summary.md
           fi
 
       - name: Commit snapshot and summary
         id: commit
-        if: steps.weekly.outputs.skip == 'false'
+        if: steps.fetch.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

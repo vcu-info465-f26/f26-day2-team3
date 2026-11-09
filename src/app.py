@@ -201,11 +201,11 @@ def show_box_scores(team: pd.Series, week: str, season: int) -> None:
         st.info("No games have been played yet in the preseason.")
         return
     if not any(BOXSCORE_DIRECTORY.glob("*.json")):
-        st.info("No box scores have been downloaded yet. Run `python boxscore.py` first.")
+        st.info("No new box scores have been added. Run `python boxscore.py` first.")
         return
     box_scores = team_box_scores(team["city"], week, season)
     if not box_scores:
-        st.info(f"No box score for {team['city']} in {week}. This was a bye week or the game hasn't been downloaded yet.")
+        st.info(f"No box score for {team['city']} in {week}. This was a bye week or the game hasn't not been played yet.")
         return
     for index, box_score in enumerate(box_scores):
         if index:
@@ -285,7 +285,7 @@ def standings_chart(
     axis.set_yticks(range(1, team_count + 1))
     axis.set_ylabel("ACC Rank (1 = first)")
     axis.set_xlabel("Week / Snapshot Date")
-    axis.set_title(f"{season} ACC Season Overview", loc="left", weight="bold", pad=16)
+    axis.set_title(f"{season} Standings Bump Chart", loc="left", weight="bold", pad=16)
     snapshot_dates = sorted(history["snapshot_date"].unique())
     axis.set_xticks(
         mdates.date2num(snapshot_dates),
@@ -305,7 +305,7 @@ def standings_chart(
 
 
 def render_animation(snapshot_history: pd.DataFrame, season: int) -> None:
-    st.subheader("ACC season overview")
+    st.subheader("ACC Standings Bump Chart")
     if snapshot_history.empty:
         st.info(f"No ACC standings history found for the {season} season yet.")
         return
@@ -426,7 +426,7 @@ def make_standings_chart(standings: pd.DataFrame, metric: str) -> Figure:
 
 
 def render_standings(standings: pd.DataFrame) -> str:
-    st.subheader("Wins and losses")
+    st.subheader("Win/Loss Horizontal Bar Chart")
     selection = st.selectbox("Sort teams by", ["Wins", "Losses"], label_visibility="collapsed")
     st.caption(
         f"{standings['season'].iloc[0]} season | "
@@ -470,7 +470,7 @@ def _answer_after_prior_turns(
 
 @st.fragment(run_every="1s")
 def render_chat(dashboard_context: str) -> None:
-    st.subheader("Ask about these standings")
+    st.subheader("AI Chatbox")
     if "chat_turns" not in st.session_state:
         turns = []
         legacy_messages = st.session_state.pop("chat_messages", [])
@@ -511,7 +511,7 @@ def render_chat(dashboard_context: str) -> None:
             else:
                 st.caption("Queued behind an earlier question.")
 
-    question = st.chat_input("Ask about the standings shown above")
+    question = st.chat_input("Ask any question about the ACC standings this season")
     if not question:
         return
 
@@ -530,7 +530,7 @@ def render_chat(dashboard_context: str) -> None:
 
 
 def render_saved_summary() -> None:
-    st.subheader("Generated standings summary")
+    st.subheader("AI Generated Summary")
     if not SUMMARY_PATH.is_file():
         st.info("No generated summary is available yet.")
         return
@@ -542,12 +542,12 @@ def render_saved_summary() -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="ACC FBS Standings", layout="wide")
+    st.set_page_config(page_title="2026 NCAAF ACC Standings Dashboard", layout="wide")
     st.markdown(
         "<style>.block-container {padding-top: 1rem; padding-bottom: 1rem;}</style>",
         unsafe_allow_html=True,
     )
-    st.title("2026 ACC FBS Standings")
+    st.title("2026 NCAA College Football ACC Standings Dashboard")
 
     with st.spinner("Building database from the latest snapshot..."):
         build_db.main()
@@ -568,20 +568,47 @@ def main() -> None:
     games_played = (history["wins"] + history["losses"]).groupby(history["snapshot_date"])
     history.loc[games_played.transform("sum") == 0, "rank"] = history["team_id"].nunique()
 
-    standings_column, animation_column = st.columns(2, gap="large")
-    with standings_column, st.container(border=True):
-        metric = render_standings(standings)
-    with animation_column, st.container(border=True):
-        render_animation(history, season)
-    render_raw_standings(history, metric)
     chat_history = history.assign(week=[
         season_period_for_date(pd.Timestamp(date), season)
         for date in history["snapshot_date"]
     ])
+
+    metric = render_standings(standings, display=False) if hasattr(render_standings, 'display') else None
+    
     dashboard_context = chat.build_dashboard_context(standings, chat_history, metric)
     render_chat(dashboard_context)
     render_saved_summary()
 
+    standings_column, animation_column = st.columns(2, gap="large")
+    with standings_column, st.container(border=True):
+        # We assume render_standings actually draws the chart here
+        metric = render_standings(standings) 
+    with animation_column, st.container(border=True):
+        render_animation(history, season)
+
+    render_raw_standings(history, metric)
+
+    st.divider()
+    st.markdown("#### Data Sources")
+    st.markdown(
+        """
+        <div style="display: flex; gap: 40px; align-items: center; padding-bottom: 20px;">
+            <div>
+                <p style="margin-bottom: 5px; font-size: 14px; color: gray;">Standings data provided by:</p>
+                <a href="https://www.balldontlie.io/" target="_blank">
+                    <img src="https://www.balldontlie.io/public/logo-full.svg" alt="balldontlie" width="150">
+                </a>
+            </div>
+            <div>
+                <p style="margin-bottom: 5px; font-size: 14px; color: gray;">Boxscore data provided by:</p>
+                <a href="https://collegefootballdata.com/" target="_blank">
+                    <img src="https://collegefootballdata.com/brand/cfbd-watermark-dark.png" alt="CollegeFootballData" width="150">
+                </a>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 if __name__ == "__main__":
     main()

@@ -36,16 +36,16 @@ GAME_IDS_BY_WEEK = {
         401858265],
     8: [401858271, 401858273, 401858272, 401858276, 401858270, 401858275, 401858274],
     9: [401858279, 401858284, 401858277, 401858280, 401858278, 401858281, 401858283, 401858282],
-    # Paste each game ID after its matchup once the game is played.
+
     10: [
-        # Fri Nov 6: Virginia Tech @ SMU
-        # Sat Nov 7: Clemson @ Syracuse
-        # Sat Nov 7: Florida State @ Boston College
-        # Sat Nov 7: North Carolina @ UConn
-        # Sat Nov 7: Duke @ NC State
-        # Sat Nov 7: Merrimack @ Wake Forest
-        # Sat Nov 7: Miami @ Notre Dame
-        # Sat Nov 7: Louisville @ Georgia Tech
+        401858288,
+        401858285,
+        401858289,
+        401858292,
+        401858286,
+        401858290,
+        401858291,
+        401858287
     ],
     11: [
         # Fri Nov 13: Florida State @ Pittsburgh
@@ -81,6 +81,12 @@ GAME_IDS_BY_WEEK = {
         # Sat Nov 28: Pittsburgh @ California
         # Sat Nov 28: SMU @ Stanford
         # Sat Nov 28: Virginia @ Virginia Tech
+    ],
+    14: [
+        # Placeholder 
+    ],
+    15: [
+        # Placeholder 
     ],
 }
 

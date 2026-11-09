@@ -59,6 +59,20 @@ Scrum Master: Robiel | Tester: Krish | Presenters: Aaron & Wyatt
 | | away_record | TEXT | |
 | | conference_record | TEXT | |
 
+## Schema Diagram
+
 <p align="center">
   <img src="schema.png" alt="NCAAF dashboard" width="800">
 </p>
+
+## Data Sources
+
+This project is powered by data from the following platforms:
+
+- **Standings Data:**  
+  <a href="https://www.balldontlie.io/"><img src="https://www.balldontlie.io/public/logo-full.svg" alt="balldontlie" width="200"></a><br>
+  *Data provided by [balldontlie.io](https://www.balldontlie.io/)*
+
+- **Boxscore Data:**  
+  <a href="https://collegefootballdata.com/"><img src="https://collegefootballdata.com/brand/cfbd-watermark-dark.png" alt="CollegeFootballData" width="200"></a><br>
+  *Data provided by [CollegeFootballData.com](https://collegefootballdata.com/)*
