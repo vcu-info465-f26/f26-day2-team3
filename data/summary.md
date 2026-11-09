@@ -1,16 +1,16 @@
 # ACC Football Standings Summary
 
-**Standings data range:** 2026-08-28 to 2026-11-06 (28 snapshots)
-**Latest dashboard snapshot:** 2026-11-06
+**Standings data range:** 2026-08-28 to 2026-11-07 (29 snapshots)
+**Latest dashboard snapshot:** 2026-11-07
 
 ## Standings leaders
 
 | Rank | Team | Overall record | Wins | Losses |
 | ---: | --- | ---: | ---: | ---: |
-| 1 | Miami Hurricanes | 8-0 | 8 | 0 |
-| 2 | Wake Forest Demon Deacons | 7-1 | 7 | 1 |
-| 3 | Duke Blue Devils | 6-2 | 6 | 2 |
+| 1 | Miami Hurricanes | 8-1 | 8 | 1 |
+| 2 | Wake Forest Demon Deacons | 8-1 | 8 | 1 |
+| 3 | Duke Blue Devils | 7-2 | 7 | 2 |
 
 ## AI-generated overview
 
-The conference picture shows a clear leader at the top, followed by a close group of teams contending for the next spots. Behind them, a cluster of squads remains tightly grouped in the middle of the standings, each with comparable performance. Near the bottom, several programs are grouped together with fewer wins, indicating a similar level of challenge across those teams.
+The competitive picture in the ACC standings begins with Miami Hurricanes, followed by Wake Forest Demon Deacons, Duke Blue Devils, SMU Mustangs, Clemson Tigers, Louisville Cardinals, Pittsburgh Panthers, Virginia Tech Hokies, North Carolina Tar Heels, Boston College Eagles, Florida State Seminoles, NC State Wolfpack, Stanford Cardinal, Syracuse Orange, Virginia Cavaliers, California Golden Bears, and Georgia Tech Yellow Jackets.
