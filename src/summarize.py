@@ -35,7 +35,10 @@ def load_standings_history(data_dir: Path, season: int) -> list[dict]:
     history = []
     for snapshot_path in sorted(data_dir.glob("????-??-??.json")):
         snapshot_date = date.fromisoformat(snapshot_path.stem)
-        if snapshot_date.year != season:
+        if snapshot_date.year not in (season, season + 1):
+            continue
+
+        if snapshot_date.year == season + 1 and snapshot_date.month != 1:
             continue
 
         payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
@@ -95,7 +98,7 @@ def load_standings_history(data_dir: Path, season: int) -> list[dict]:
     return history
 
 
-def generate_ai_overview(standings: list[dict]) -> str:
+def generate_ai_overview(history: list[dict]) -> str:
     load_dotenv(ROOT_DIR / ".env")
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
@@ -110,10 +113,15 @@ def generate_ai_overview(standings: list[dict]) -> str:
             "For GitHub Actions, add it as a repository or environment secret."
         )
 
-    facts = "\n".join(
-        f"- {team['team_name']}: {team['wins']} wins, {team['losses']} losses"
-        for team in standings
-    )
+    facts_lines = []
+    for snapshot in history:
+        facts_lines.append(f"Snapshot Date: {snapshot['date']}")
+        for team in snapshot["standings"]:
+            facts_lines.append(f"- {team['team_name']}: {team['wins']} wins, {team['losses']} losses")
+        facts_lines.append("")
+    
+    facts = "\n".join(facts_lines)
+
     response = requests.post(
         GROQ_API_URL,
         headers={"Authorization": f"Bearer {api_key}"},
@@ -123,11 +131,11 @@ def generate_ai_overview(standings: list[dict]) -> str:
                 {
                     "role": "system",
                     "content": (
-                        "Write a brief, neutral paragraph about the competitive "
-                        "picture in these ACC standings. Use only the supplied "
-                        "teams and facts. Do not include digits, number words, "
-                        "records, dates, or claims about unprovided events or "
-                        "trends. Return only the paragraph."
+                        "Write a brief, neutral paragraph summarizing how the competitive "
+                        "picture in the ACC has evolved over the provided timeline. "
+                        "Use only the supplied historical snapshots. Focus on which teams "
+                        "moved up or down the standings. Do not include claims about "
+                        "unprovided events, injuries, or games. Return only the paragraph."
                     ),
                 },
                 {"role": "user", "content": facts},
@@ -138,19 +146,17 @@ def generate_ai_overview(standings: list[dict]) -> str:
     )
     response.raise_for_status()
     overview = response.json()["choices"][0]["message"]["content"]
+
     if not isinstance(overview, str) or not overview.strip():
         raise ValueError("The AI model returned an empty standings overview")
     overview = overview.strip()
-    if re.search(r"\d", overview) or NUMBER_WORD.search(overview):
-        raise ValueError("The AI overview included a number; refusing inaccurate output")
     return overview
-
 
 def render_summary(history: list[dict], overview: str) -> str:
     latest = history[-1]
     leaders = latest["standings"][:3]
     lines = [
-        "# ACC Football Standings Summary",
+        "# AI Generated Summary",
         "",
         (
             f"**Standings data range:** {history[0]['date']} to {latest['date']} "
@@ -158,7 +164,7 @@ def render_summary(history: list[dict], overview: str) -> str:
         ),
         f"**Latest dashboard snapshot:** {latest['date']}",
         "",
-        "## Standings leaders",
+        "## Current Standings Team Rank",
         "",
         "| Rank | Team | Overall record | Wins | Losses |",
         "| ---: | --- | ---: | ---: | ---: |",
@@ -171,7 +177,7 @@ def render_summary(history: list[dict], overview: str) -> str:
     lines.extend(
         [
             "",
-            "## AI-generated overview",
+            "## AI Generated Summary",
             "",
             overview,
             "",
@@ -203,10 +209,11 @@ def write_summary_atomically(path: Path, content: str) -> None:
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description="Summarize ACC football standings")
     parser.add_argument("--season", type=int, default=2026)
+    parser.add_argument("--data_file", type=str, help="Specific JSON file to process (passed by GitHub Actions)")
     args = parser.parse_args(argv)
 
     history = load_standings_history(DATA_DIR, args.season)
-    overview = generate_ai_overview(history[-1]["standings"])
+    overview = generate_ai_overview(history)
     summary = render_summary(history, overview)
     write_summary_atomically(SUMMARY_PATH, summary)
     logger.info("Generated ACC standings summary at %s", SUMMARY_PATH)
