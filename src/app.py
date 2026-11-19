@@ -470,7 +470,6 @@ def _answer_after_prior_turns(
 
 @st.fragment(run_every="1s")
 def render_chat(dashboard_context: str) -> None:
-    st.subheader("AI Chatbox")
     if "chat_turns" not in st.session_state:
         turns = []
         legacy_messages = st.session_state.pop("chat_messages", [])
@@ -490,43 +489,53 @@ def render_chat(dashboard_context: str) -> None:
         st.session_state.chat_turns = turns
 
     turns = st.session_state.chat_turns
-    for turn in turns:
-        with st.chat_message("user"):
-            st.markdown(turn["question"])
-
-        future = turn["future"]
-        if future.done() and "answer" not in turn and "error" not in turn:
-            try:
-                turn["answer"] = future.result()
-            except Exception as error:
-                turn["error"] = str(error)
-
+    with st.popover("?", help="Chat with the ACC standings assistant", key="chat_launcher"):
         with st.chat_message("assistant"):
-            if "error" in turn:
-                st.error(turn["error"])
-            elif "answer" in turn:
-                st.markdown(turn["answer"])
-            elif future.running():
-                st.caption("Working on this question. Any rate-limit wait will be retried automatically.")
-            else:
-                st.caption("Queued behind an earlier question.")
+            st.markdown("Hello! What can I help you with today?")
 
-    question = st.chat_input("Ask any question about the ACC standings this season")
-    if not question:
-        return
+        for turn in turns:
+            with st.chat_message("user"):
+                st.markdown(turn["question"])
 
-    previous_turns = turns.copy()
-    future = CHAT_EXECUTOR.submit(
-        _answer_after_prior_turns,
-        question,
-        previous_turns,
-        dashboard_context,
-    )
-    turns.append({"question": question, "future": future})
-    with st.chat_message("user"):
-        st.markdown(question)
-    with st.chat_message("assistant"):
-        st.caption("Question accepted. Waiting for the chat model...")
+            future = turn["future"]
+            if future.done() and "answer" not in turn and "error" not in turn:
+                try:
+                    turn["answer"] = future.result()
+                except Exception as error:
+                    turn["error"] = str(error)
+
+            with st.chat_message("assistant"):
+                if "error" in turn:
+                    st.error(turn["error"])
+                elif "answer" in turn:
+                    st.markdown(turn["answer"])
+                elif future.running():
+                    st.caption("Working on this question. Any rate-limit wait will be retried automatically.")
+                else:
+                    st.caption("Queued behind an earlier question.")
+
+        with st.form("chat_question_form", clear_on_submit=True):
+            question = st.text_input(
+                "Message",
+                placeholder="Ask about the ACC standings",
+                label_visibility="collapsed",
+            )
+            submitted = st.form_submit_button("Send", use_container_width=True)
+        if not submitted or not question.strip():
+            return
+
+        previous_turns = turns.copy()
+        future = CHAT_EXECUTOR.submit(
+            _answer_after_prior_turns,
+            question.strip(),
+            previous_turns,
+            dashboard_context,
+        )
+        turns.append({"question": question.strip(), "future": future})
+        with st.chat_message("user"):
+            st.markdown(question.strip())
+        with st.chat_message("assistant"):
+            st.caption("Question accepted. Waiting for the chat model...")
 
 
 def render_saved_summary() -> None:
@@ -544,7 +553,45 @@ def render_saved_summary() -> None:
 def main() -> None:
     st.set_page_config(page_title="2026 NCAAF ACC Standings Dashboard", layout="wide")
     st.markdown(
-        "<style>.block-container {padding-top: 1rem; padding-bottom: 1rem;}</style>",
+        """
+        <style>
+        .block-container {padding-top: 1rem; padding-bottom: 1rem;}
+        .st-key-chat_launcher {
+            position: fixed !important;
+            right: 1.25rem;
+            bottom: 1.25rem;
+            z-index: 9999;
+            width: 3.5rem !important;
+            min-width: 3.5rem !important;
+            max-width: 3.5rem !important;
+        }
+        .st-key-chat_launcher div[data-testid="stPopover"] {
+            width: 100%;
+            min-width: 100%;
+        }
+        .st-key-chat_launcher div[data-testid="stPopover"] > button {
+            width: 3.5rem !important;
+            height: 3.5rem !important;
+            min-width: 3.5rem !important;
+            padding: 0;
+            border-radius: 50%;
+            background: #00539B;
+            color: white;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .st-key-chat_launcher div[data-testid="stPopover"] > button:hover {
+            background: #003B70;
+            color: white;
+        }
+        div[data-testid="stPopoverBody"] {
+            width: min(24rem, calc(100vw - 2rem));
+            max-height: min(70vh, 40rem);
+            overflow-y: auto;
+        }
+        </style>
+        """,
         unsafe_allow_html=True,
     )
     st.title("2026 NCAA College Football ACC Standings Dashboard")
