@@ -414,7 +414,9 @@ def render_animation(snapshot_history: pd.DataFrame, season: int) -> None:
     show_standings_animation()
 
 
-def make_standings_chart(standings: pd.DataFrame, metric: str) -> Figure:
+def make_standings_chart(
+    standings: pd.DataFrame, metric: str, progress: float = 1.0,
+) -> Figure:
     other_metric = "losses" if metric == "wins" else "wins"
     standings = standings.sort_values(
         [metric, other_metric, "city"], ascending=[False, True, True],
@@ -425,7 +427,7 @@ def make_standings_chart(standings: pd.DataFrame, metric: str) -> Figure:
     for position, row in standings.iterrows():
         abbreviation = row["abbreviation"]
         primary, secondary, *_ = TEAM_COLORS[abbreviation]
-        value = int(row[metric])
+        value = row[metric] * progress
         axis.barh(position, value, color=primary, edgecolor=secondary,
                   linewidth=2, height=0.62, zorder=2)
         logo_path = IMAGE_DIRECTORY / TEAM_LOGOS[abbreviation]
@@ -436,7 +438,7 @@ def make_standings_chart(standings: pd.DataFrame, metric: str) -> Figure:
                 bboxprops={"facecolor": "white", "edgecolor": secondary, "linewidth": 1.2},
                 zorder=3,
             ))
-        axis.text(value + 0.45, position, str(value),
+        axis.text(value + 0.45, position, str(round(value)),
                   va="center", ha="left", color="#242424", fontsize=10)
     axis.set_yticks(range(len(standings)), standings["city"], fontsize=9)
     axis.invert_yaxis()
@@ -461,8 +463,43 @@ def render_standings(standings: pd.DataFrame) -> str:
         f"Snapshot: {standings['snapshot_date'].iloc[0]} | {len(standings)} teams  \n"
         f"{season_period_for_date(pd.Timestamp(standings['snapshot_date'].iloc[0]), int(standings['season'].iloc[0]))}"
     )
-    chart = make_standings_chart(standings, selection.lower())
-    render_chart(chart)
+    st.session_state.setdefault("bar_chart_animation_progress", 1.0)
+    st.session_state.setdefault("bar_chart_animation_playing", False)
+    play_column, pause_column = st.columns(2)
+    with play_column:
+        if st.button(
+            "Play", key="play_bar_chart_animation",
+            disabled=st.session_state.bar_chart_animation_playing,
+            width="stretch",
+        ):
+            if st.session_state.bar_chart_animation_progress >= 1.0:
+                st.session_state.bar_chart_animation_progress = 0.0
+            st.session_state.bar_chart_animation_playing = True
+    with pause_column:
+        if st.button(
+            "Pause", key="pause_bar_chart_animation",
+            disabled=not st.session_state.bar_chart_animation_playing,
+            width="stretch",
+        ):
+            st.session_state.bar_chart_animation_playing = False
+
+    @st.fragment(
+        run_every="0.1s"
+        if st.session_state.bar_chart_animation_playing else None
+    )
+    def show_standings_chart() -> None:
+        progress = st.session_state.bar_chart_animation_progress
+        chart = make_standings_chart(standings, selection.lower(), progress)
+        render_chart(chart)
+        if st.session_state.bar_chart_animation_playing:
+            if progress >= 1.0:
+                st.session_state.bar_chart_animation_playing = False
+                st.rerun()
+            st.session_state.bar_chart_animation_progress = min(
+                progress + 0.05, 1.0,
+            )
+
+    show_standings_chart()
     return selection.lower()
 
 
