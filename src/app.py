@@ -221,17 +221,34 @@ def prepare_animation_history(
         return history.copy()
     history = history.copy()
     history["snapshot_date"] = pd.to_datetime(history["snapshot_date"])
-    snapshot_dates = []
-    for _, start, end in SEASON_PERIODS:
+    snapshot_weeks = []
+    for week_name, start, end in SEASON_PERIODS:
         start_date = pd.Timestamp(season, *start)
         end_date = pd.Timestamp(season + (end[0] < start[0]), *end)
         if end_date >= as_of.normalize():
             continue
-        week = history[history["snapshot_date"].between(start_date, end_date)]
+        # Standings snapshots are collected before the weekend games and the
+        # first post-week update can arrive on the following Monday.
+        snapshot_end = end_date if week_name == "Preseason" else end_date + pd.Timedelta(days=1)
+        week = history[
+            history["snapshot_date"].between(
+                start_date, snapshot_end,
+            )
+        ]
         if not week.empty:
-            snapshot_dates.append(week["snapshot_date"].max())
-    snapshot_dates.append(history["snapshot_date"].max())
-    return history[history["snapshot_date"].isin(snapshot_dates)].sort_values(
+            snapshot_weeks.append((week["snapshot_date"].max(), week_name))
+    latest_snapshot = history["snapshot_date"].max()
+    snapshot_weeks.append((
+        latest_snapshot,
+        season_period_for_date(latest_snapshot, season),
+    ))
+    snapshot_dates = [date for date, _ in snapshot_weeks]
+    week_by_snapshot = {}
+    for snapshot_date, week_name in snapshot_weeks:
+        week_by_snapshot.setdefault(snapshot_date, week_name)
+    animation_history = history[history["snapshot_date"].isin(snapshot_dates)].copy()
+    animation_history["week"] = animation_history["snapshot_date"].map(week_by_snapshot)
+    return animation_history.sort_values(
         ["snapshot_date", "rank"],
     ).reset_index(drop=True)
 
@@ -287,10 +304,15 @@ def standings_chart(
     axis.set_xlabel("Week / Snapshot Date")
     axis.set_title(f"{season} Standings Bump Chart", loc="left", weight="bold", pad=16)
     snapshot_dates = sorted(history["snapshot_date"].unique())
+    week_labels = []
+    for date in snapshot_dates:
+        snapshot = history[history["snapshot_date"] == date]
+        week = snapshot["week"].iloc[0] if "week" in snapshot else None
+        week = week or season_period_for_date(pd.Timestamp(date), season)
+        week_labels.append(f"{week}\n{pd.Timestamp(date):%b %d}")
     axis.set_xticks(
         mdates.date2num(snapshot_dates),
-        [f"{season_period_for_date(pd.Timestamp(date), season)}\n{pd.Timestamp(date):%b %d}"
-         for date in snapshot_dates],
+        week_labels,
         fontsize=8,
     )
     axis.grid(axis="both", color="#D8D8E0", linewidth=0.8)
@@ -345,11 +367,14 @@ def render_animation(snapshot_history: pd.DataFrame, season: int) -> None:
     def show_standings_animation() -> None:
         frame_index = st.session_state.animation_index
         snapshot_date = pd.Timestamp(animation_dates[frame_index])
-        week = season_period_for_date(snapshot_date, season)
+        frame_history = history[history["snapshot_date"] <= snapshot_date]
+        week = frame_history.loc[
+            frame_history["snapshot_date"] == snapshot_date, "week"
+        ].iloc[0]
         st.caption(f"Snapshot: {snapshot_date:%b %d, %Y}  \n{week}")
         highlighted_team = st.session_state.highlighted_team
         chart, points = standings_chart(
-            history[history["snapshot_date"] <= snapshot_date], season,
+            frame_history, season,
             timeline_end=pd.Timestamp(animation_dates[-1]),
             highlighted_team=highlighted_team,
         )
@@ -372,9 +397,12 @@ def render_animation(snapshot_history: pd.DataFrame, season: int) -> None:
                     for index, (_, point_x, point_y) in enumerate(points)
                 )
                 if distance <= DOT_CLICK_RADIUS ** 2:
+                    highlighted_history = frame_history[
+                        frame_history["team_id"] == highlighted_team
+                    ].sort_values("snapshot_date")
                     show_box_scores(
-                        history[history["team_id"] == highlighted_team].iloc[0],
-                        season_period_for_date(points[index][0], season), season,
+                        highlighted_history.iloc[0],
+                        highlighted_history.iloc[index]["week"], season,
                     )
         if st.session_state.animation_playing:
             if frame_index < len(animation_dates) - 1:
@@ -612,6 +640,10 @@ def main() -> None:
         ascending=[True, False, True, True],
     ).reset_index(drop=True)
     history["rank"] = history.groupby("snapshot_date").cumcount() + 1
+    preseason = history["snapshot_date"].map(
+        lambda date: season_period_for_date(pd.Timestamp(date), season) == "Preseason",
+    )
+    history.loc[preseason, "rank"] = history["team_id"].nunique()
     games_played = (history["wins"] + history["losses"]).groupby(history["snapshot_date"])
     history.loc[games_played.transform("sum") == 0, "rank"] = history["team_id"].nunique()
 
