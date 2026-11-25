@@ -1,7 +1,7 @@
 # AI Generated Summary
 
-**Standings data range:** 2026-08-28 to 2026-11-14 (31 snapshots)
-**Latest dashboard snapshot:** 2026-11-14
+**Standings data range:** 2026-08-28 to 2026-11-20 (32 snapshots)
+**Latest dashboard snapshot:** 2026-11-20
 
 ## Current Standings Team Rank
 
@@ -9,8 +9,8 @@
 | ---: | --- | ---: | ---: | ---: |
 | 1 | Miami Hurricanes | 9-1 | 9 | 1 |
 | 2 | Wake Forest Demon Deacons | 9-1 | 9 | 1 |
-| 3 | Duke Blue Devils | 7-3 | 7 | 3 |
+| 3 | Louisville Cardinals | 7-3 | 7 | 3 |
 
 ## AI Generated Summary
 
-From the opening snapshots, Miami, Duke, Pittsburgh, Virginia Tech, Wake Forest and SMU quickly emerged as the ACC’s leading clubs, each climbing from early ties to multi‑win records and occupying the top six spots by early October. Florida State, North Carolina, Louisville, Boston College, California, Clemson and the remaining teams lingered near the middle of the standings, with Florida State slipping from an early win to a .500 record, while Clemson rose modestly to a solid mid‑table position. By mid‑November the hierarchy solidified: Miami and Wake Forest remained the only unbeaten (or near‑unbeaten) squads, Duke, SMU, Virginia Tech and Pittsburgh held the next tier with winning records, and the rest of the conference—particularly Florida State, North Carolina, Louisville, Boston College, Stanford, California and Georgia Tech—settled into sub‑.500 or .500 positions, reflecting a clear separation between the early‑season leaders and the lower‑performing teams.
+From the opening week, Miami, Duke, Pittsburgh, Virginia Tech, Wake Forest and SMU quickly emerged as the conference’s leaders, each climbing from early‑season parity to the top‑five slots and maintaining winning records throughout the span. Miami remained the sole unbeaten team until a late loss gave them a 9‑1 finish, while Wake Forest matched that success, moving from a 5‑1 start to a final 9‑1 record. Duke, SMU, Virginia Tech and Pittsburgh stayed consistently above .500, with Duke and SMU advancing from 4‑2 to 7‑3 and 7‑3 respectively, and Pittsburgh improving from 5‑2 to 6‑4. Louisville, Clemson and North Carolina fluctuated around the middle of the table, rising from early 2‑3 or 3‑3 marks to finish near .500 (Louisville and Clemson ending at 7‑4 and 7‑4, North Carolina at 5‑5). The lower tier—Boston College, California, Florida State, NC State, Stanford and Georgia Tech—saw modest gains for some (Boston College moving from 0‑1 to 4‑6, California improving to 3‑7), but overall they remained below .500, with Georgia Tech staying near the bottom throughout.
